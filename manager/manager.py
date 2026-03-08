@@ -7,7 +7,7 @@ peers = {}
 dht_exists = False
 dht_peers = []
 dht_leader = None
-dht_status = "IDLE"  # IDLE, SETTING_UP, READY
+dht_status = "IDLE"
 
 
 def handle_register(parts, addr, sock):

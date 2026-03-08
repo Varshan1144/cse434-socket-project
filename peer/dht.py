@@ -15,7 +15,7 @@ manager_ip = None
 manager_port = None
 main_sock = None
 
-local_dht = {} # pos -> record
+local_dht = {}
 
 def set_my_name(name):
     global my_name
@@ -46,12 +46,10 @@ def handle_setup_reply(reply, leader_name, year):
         is_leader = True
         print("[DHT] I am the leader. Building ring...")
         build_ring()
-        # Explicitly set ring_size, my_id, and right_neighbor for the leader
         global ring_size, my_id, right_neighbor
         n = len(dht_peers)
         ring_size = n
-        my_id = 0 # Leader is always ID 0
-        # Right neighbor is peer 1 (if n > 0)
+        my_id = 0
         if n > 1:
             neigh = dht_peers[1]
             right_neighbor = (neigh[1], neigh[2])
@@ -70,7 +68,6 @@ def build_ring():
         neigh_ip, neigh_port = neigh[1], neigh[2]
         msg = f"set-id {i} {n} {neigh_ip} {neigh_port}"
         print(f"[DHT DEBUG] Sending set-id to {name} at {ip}:{port}")
-        # Send set-id to peer i
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto(msg.encode(), (ip, port))
         sock.close()
@@ -92,7 +89,7 @@ def load_dataset(year):
     
     records = []
     with open(filename, 'r') as f:
-        lines = f.readlines()[1:] # Skip header
+        lines = f.readlines()[1:]
         for line in lines:
             if line.strip():
                 records.append(line.strip())
@@ -114,7 +111,6 @@ def distribute_data(year):
     sys.stdout.flush()
 
     for record in records:
-        # Assuming event_id is the first field
         event_id = int(record.split(',')[0])
         pos = event_id % s
         target_id = pos % n
@@ -126,8 +122,6 @@ def distribute_data(year):
             main_sock.sendto(msg.encode(), right_neighbor)
     
     print(f"[DHT] Data distribution initiated.")
-    # In a real implementation, we'd wait for some acknowledgment.
-    # For the milestone, we'll send dht-complete after initiating distribution.
     send_dht_complete()
 
 def handle_peer_message(message, addr, sock):
@@ -142,14 +136,11 @@ def handle_peer_message(message, addr, sock):
         
         if target_id == my_id:
             local_dht[pos] = record
-            # print(f"[DHT] Stored record at pos {pos}")
         else:
-            # Forward around the ring
             sock.sendto(message.encode(), right_neighbor)
     elif cmd == "teardown":
         local_dht.clear()
         if is_leader:
-             # Logic for teardown complete
              pass
         else:
             sock.sendto(message.encode(), right_neighbor)

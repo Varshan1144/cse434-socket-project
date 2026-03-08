@@ -22,14 +22,12 @@ def listen_loop(sock):
             if parts[0] == "set-id":
                 handle_set_id(parts)
             elif parts[0] == "SUCCESS" and len(message.splitlines()) > 1:
-                # This is likely the setup-dht reply
                 handle_setup_reply(message, my_name_for_setup_ref, current_year)
             elif parts[0] == "SUCCESS" or parts[0] == "FAILURE":
                 print(f"\n[MANAGER] {message}\n> ", end="")
             else:
                 handle_peer_message(message, addr, sock)
         except Exception as e:
-            # print(f"[LISTENER ERROR] {e}")
             break
 
 my_name_for_setup_ref = None
@@ -42,14 +40,10 @@ def start_peer(manager_ip, manager_port, peer_ip, m_port):
     
     set_manager_info(manager_ip, manager_port, sock)
 
-    # Start background listener
     listener = threading.Thread(target=listen_loop, args=(sock,), daemon=True)
     listener.start()
 
     while True:
-        # print("\nEnter command:")
-        # print("register <peer_name> <peer_ip> <m_port> <p_port>")
-        # print("setup-dht <peer_name> <n> <year>")
         cmd = input("> ").strip()
 
         if not cmd:
