@@ -17,7 +17,6 @@ def handle_register(parts, addr, sock):
 
     _, name, ip, m_port, p_port = parts
     
-    # Validation: Alphabetic string, length <= 15
     if not name.isalpha() or len(name) > 15:
         sock.sendto("FAILURE: peer-name must be alphabetic and max 15 chars".encode(), addr)
         return
@@ -89,7 +88,6 @@ def handle_setup_dht(parts, addr, sock):
     print(f"[MANAGER] DHT Peers: {dht_peers}")
 
     response = "SUCCESS\n"
-    # Leader is guaranteed to be first
     for name in dht_peers:
         info = peers[name]
         response += f"{name} {info['ip']} {info['p_port']}\n"
@@ -131,7 +129,6 @@ def start_manager(port):
 
         command = parts[0]
 
-        # State lock: After setup-dht SUCCESS, only dht-complete is allowed
         if dht_status == "SETTING_UP":
             if command == "dht-complete":
                 handle_dht_complete(parts, addr, sock)
