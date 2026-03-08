@@ -19,12 +19,13 @@ def listen_loop(sock):
             if not parts:
                 continue
 
-            if parts[0] == "set-id":
+            if message.startswith("set-id"):
                 handle_set_id(parts)
-            elif parts[0] == "SUCCESS" and len(message.splitlines()) > 1:
+            elif message.startswith("SUCCESS") and len(message.splitlines()) > 1:
                 handle_setup_reply(message, my_name_for_setup_ref, current_year)
-            elif parts[0] == "SUCCESS" or parts[0] == "FAILURE":
+            elif message.startswith("SUCCESS") or message.startswith("FAILURE"):
                 print(f"\n[MANAGER] {message}\n> ", end="")
+                sys.stdout.flush()
             else:
                 handle_peer_message(message, addr, sock)
         except Exception as e:

@@ -30,21 +30,21 @@ def test_milestone():
     try:
         # Register them
         print("Registering peers...")
-        p1.stdin.write("register peer1 127.0.0.1 31501 31601\n")
+        p1.stdin.write("register peerA 127.0.0.1 31501 31601\n")
         p1.stdin.flush()
         time.sleep(1)
         
-        p2.stdin.write("register peer2 127.0.0.1 31502 31602\n")
+        p2.stdin.write("register peerB 127.0.0.1 31502 31602\n")
         p2.stdin.flush()
         time.sleep(1)
         
-        p3.stdin.write("register peer3 127.0.0.1 31503 31603\n")
+        p3.stdin.write("register peerC 127.0.0.1 31503 31603\n")
         p3.stdin.flush()
         time.sleep(1)
 
         # Setup DHT
         print("Setting up DHT...")
-        p1.stdin.write("setup-dht peer1 3 1950\n")
+        p1.stdin.write("setup-dht peerA 3 1950\n")
         p1.stdin.flush()
         
         # Give it some time to distribute data and signal completion

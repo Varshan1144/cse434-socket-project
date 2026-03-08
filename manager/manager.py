@@ -16,6 +16,12 @@ def handle_register(parts, addr, sock):
         return
 
     _, name, ip, m_port, p_port = parts
+    
+    # Validation: Alphabetic string, length <= 15
+    if not name.isalpha() or len(name) > 15:
+        sock.sendto("FAILURE: peer-name must be alphabetic and max 15 chars".encode(), addr)
+        return
+
     m_port = int(m_port)
     p_port = int(p_port)
 
@@ -24,8 +30,8 @@ def handle_register(parts, addr, sock):
         return
 
     for peer in peers.values():
-        if peer["m_port"] == m_port or peer["p_port"] == p_port:
-            sock.sendto("FAILURE: Port already in use".encode(), addr)
+        if peer["ip"] == ip and (peer["m_port"] == m_port or peer["p_port"] == p_port):
+            sock.sendto("FAILURE: Port already in use on this IP".encode(), addr)
             return
 
     peers[name] = {
@@ -36,6 +42,7 @@ def handle_register(parts, addr, sock):
     }
 
     print(f"[MANAGER] Registered peer: {name}")
+    print(f"[MANAGER] Sending SUCCESS to {name} at {addr}")
     sock.sendto("SUCCESS: Registered".encode(), addr)
 
 
@@ -82,6 +89,7 @@ def handle_setup_dht(parts, addr, sock):
     print(f"[MANAGER] DHT Peers: {dht_peers}")
 
     response = "SUCCESS\n"
+    # Leader is guaranteed to be first
     for name in dht_peers:
         info = peers[name]
         response += f"{name} {info['ip']} {info['p_port']}\n"
@@ -102,6 +110,7 @@ def handle_dht_complete(parts, addr, sock):
 
     dht_status = "READY"
     print(f"[MANAGER] DHT setup complete. Ready for queries.")
+    print(f"[MANAGER] Sending SUCCESS to leader {name} at {addr}")
     sock.sendto("SUCCESS: DHT is ready".encode(), addr)
 
 
@@ -121,6 +130,14 @@ def start_manager(port):
             continue
 
         command = parts[0]
+
+        # State lock: After setup-dht SUCCESS, only dht-complete is allowed
+        if dht_status == "SETTING_UP":
+            if command == "dht-complete":
+                handle_dht_complete(parts, addr, sock)
+            else:
+                sock.sendto("FAILURE: Manager waiting for dht-complete".encode(), addr)
+            continue
 
         if command == "register":
             handle_register(parts, addr, sock)
