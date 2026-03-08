@@ -7,6 +7,7 @@ peers = {}
 dht_exists = False
 dht_peers = []
 dht_leader = None
+dht_status = "IDLE"  # IDLE, SETTING_UP, READY
 
 
 def handle_register(parts, addr, sock):
@@ -71,6 +72,7 @@ def handle_setup_dht(parts, addr, sock):
     dht_peers = [leader_name] + selected
     dht_leader = leader_name
     dht_exists = True
+    dht_status = "SETTING_UP"
 
     peers[leader_name]["state"] = "Leader"
     for p in selected:
@@ -85,6 +87,22 @@ def handle_setup_dht(parts, addr, sock):
         response += f"{name} {info['ip']} {info['p_port']}\n"
 
     sock.sendto(response.encode(), addr)
+
+
+def handle_dht_complete(parts, addr, sock):
+    global dht_status
+    if len(parts) != 2:
+        sock.sendto("FAILURE: Invalid arguments".encode(), addr)
+        return
+
+    name = parts[1]
+    if name != dht_leader:
+        sock.sendto("FAILURE: Only leader can call dht-complete".encode(), addr)
+        return
+
+    dht_status = "READY"
+    print(f"[MANAGER] DHT setup complete. Ready for queries.")
+    sock.sendto("SUCCESS: DHT is ready".encode(), addr)
 
 
 def start_manager(port):
@@ -108,6 +126,8 @@ def start_manager(port):
             handle_register(parts, addr, sock)
         elif command == "setup-dht":
             handle_setup_dht(parts, addr, sock)
+        elif command == "dht-complete":
+            handle_dht_complete(parts, addr, sock)
         else:
             sock.sendto("FAILURE: Unknown command".encode(), addr)
 
